@@ -1,0 +1,81 @@
+// src/Pyramid.tsx
+import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
+import { ReactNode } from 'react';
+
+interface PyramidProps extends React.ComponentProps<'mesh'> {
+  color?: THREE.ColorRepresentation;
+  colors?: string[];
+  selected?: boolean;
+  children?: ReactNode;
+  position: [number, number, number];
+  scale: [number, number, number];
+  useRandomColors?: boolean;
+  onClick?: () => void;
+}
+
+export const Pyramid: React.FC<PyramidProps> = (props) => {
+  const { color, colors, selected, position, scale, useRandomColors, onClick, ...meshProps } = props;
+  const ref = useRef<THREE.Mesh>(null);
+  const [pulseScale, setPulseScale] = useState(scale); // Исходный масштаб
+  const pulseSpeed = 10; // Скорость пульсации
+  const pulseIntensity = 0.1; // Интенсивность пульсации
+  const [hovered, setHovered] = useState(false);
+
+  const pyramidMaterial = useMemo(() => {
+    if (useRandomColors && colors) {
+      return colors.map(color => 
+        new THREE.MeshStandardMaterial({ color })
+      );
+    } else {
+      return new THREE.MeshStandardMaterial({ color });
+    }
+  }, [color, colors, useRandomColors]);
+
+  useEffect(() => {
+    if (ref.current && !selected) {
+      setPulseScale(scale);
+    }
+  }, [selected, scale]);
+
+  useFrame((state) => {
+    if (ref.current && selected) {
+      const time = state.clock.getElapsedTime();
+      const scaleFactor = 1 + pulseIntensity * Math.sin(time * pulseSpeed);
+      setPulseScale([scale[0] * scaleFactor, scale[1] * scaleFactor, scale[2] * scaleFactor]);
+    }
+  });
+
+  useEffect(() => {
+    document.body.style.cursor = hovered ? 'pointer' : 'auto';
+    return () => {
+      document.body.style.cursor = 'auto';
+    };
+  }, [hovered]);
+
+  return (
+    <mesh
+      position={position}
+      scale={pulseScale}
+      {...meshProps}
+      ref={ref}
+      castShadow
+      material={useRandomColors ? pyramidMaterial : pyramidMaterial}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.();
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        setHovered(true);
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        setHovered(false);
+      }}
+    >
+      <coneGeometry args={[1, 2, 4]} /> {/*  args: [radius, height, radialSegments] */}
+    </mesh>
+  );
+};
