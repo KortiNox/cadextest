@@ -10,7 +10,7 @@ interface PrimitiveFormProps {
 
 const FORM_RULES = {
   required: { required: true, message: 'This field is required' },
-  number: { type: 'number' as const, message: 'Please input a valid number' },
+  number: { type: 'number' as const },
   positive: { min: 0.1, message: 'Value must be greater than 0' },
 };
 
